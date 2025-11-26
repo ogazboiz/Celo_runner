@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Add empty turbopack config to silence warning when using webpack
+  turbopack: {},
+  
   webpack: (config, { isServer, webpack }) => {
     // Use IgnorePlugin to exclude test files and other unnecessary files
     config.plugins = config.plugins || [];
