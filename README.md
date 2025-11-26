@@ -79,9 +79,9 @@ View contracts on Blockscout: https://explorer.celo-sepolia.celo-testnet.org/
 ## Documentation
 
 - **Root README**: Project overview and getting started (this file)
-- **smartcontract/README.md**: Smart contract setup, deployment, and verification
-- **frontend/README.md**: Frontend setup, features, and integration guide
-- **frontend/MINIPAY_INTEGRATION.md**: MiniPay integration details and features
+- **[smartcontract/README.md](./smartcontract/README.md)**: Smart contract setup, deployment, and verification
+- **[frontend/README.md](./frontend/README.md)**: Frontend setup, features, and integration guide
+- **[frontend/MINIPAY_INTEGRATION.md](./frontend/MINIPAY_INTEGRATION.md)**: MiniPay integration details and features
 
 ## Built for Hackathon
 
