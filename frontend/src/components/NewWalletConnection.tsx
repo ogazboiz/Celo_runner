@@ -19,6 +19,7 @@ export function NewWalletConnection() {
     setPlayer,
     registerPlayer,
     loadPlayerData,
+    contractCallbacks,
     player
   } = useGameStore();
 
@@ -93,15 +94,21 @@ export function NewWalletConnection() {
     if (!username.trim()) return;
 
     // First, check if player is already registered by loading their data
-    if (account?.address) {
+    if (account?.address && contractCallbacks.loadPlayerData) {
       console.log('🔍 Checking if player is already registered...');
-      const existingPlayer = await loadPlayerData(account.address);
-      if (existingPlayer?.isRegistered) {
-        console.log('✅ Player is already registered, skipping registration');
-        setRegistrationStatus('success');
-        setUsername('');
-        setIsRegistering(false);
-        return;
+      try {
+        const existingPlayer = await contractCallbacks.loadPlayerData(account.address);
+        if (existingPlayer && (existingPlayer.isRegistered || (existingPlayer.username && existingPlayer.username.trim().length > 0))) {
+          console.log('✅ Player is already registered, skipping registration');
+          setRegistrationStatus('success');
+          setUsername('');
+          setIsRegistering(false);
+          // Also load the player data into the store
+          await loadPlayerData(account.address);
+          return;
+        }
+      } catch (error) {
+        console.log('Could not check existing registration, proceeding with new registration');
       }
     }
 
@@ -112,21 +119,6 @@ export function NewWalletConnection() {
       console.log('🔄 Starting registration for:', username.trim());
       const result = await registerPlayer(username.trim());
       console.log('📝 Registration result:', result);
-
-      // Check if result is the special "already_registered" value
-      if (result === 'already_registered') {
-        console.log('✅ Player already registered (detected during registration), loading data...');
-        setRegistrationStatus('waiting');
-        setUsername('');
-        setTimeout(async () => {
-          setRegistrationStatus('success');
-          if (account?.address) {
-            await loadPlayerData(account.address);
-          }
-        }, 2000);
-        setIsRegistering(false);
-        return;
-      }
 
       if (result) {
         console.log('✅ Registration successful! Waiting for blockchain confirmation...');
@@ -144,9 +136,9 @@ export function NewWalletConnection() {
       } else {
         setRegistrationStatus('idle');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if error is "Already registered" - treat as success
-      const errorMessage = error?.message || error?.toString() || '';
+      const errorMessage = (error instanceof Error ? error.message : String(error)) || '';
       if (errorMessage.includes('Already registered') || 
           errorMessage.includes('already registered') ||
           errorMessage.includes('Player already registered')) {
