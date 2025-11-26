@@ -29,7 +29,15 @@ const soundFiles: Record<SoundType, string> = {
 export function useGameSounds() {
   const audioCache = useRef<Map<SoundType, HTMLAudioElement>>(new Map());
   const bgMusicRef = useRef<HTMLAudioElement | null>(null);
-  const [isMusicEnabled, setIsMusicEnabled] = useState(true);
+  // Initialize from localStorage - only music state is saved
+  const [isMusicEnabled, setIsMusicEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('musicEnabled');
+      return saved ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+  // Sound effects are always enabled
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
 
   useEffect(() => {
@@ -58,14 +66,13 @@ export function useGameSounds() {
   }, []);
 
   const playSound = useCallback((type: SoundType) => {
-    if (!isSoundEnabled) return;
-
+    // Sound effects always play - no check needed
     try {
       const audio = audioCache.current.get(type);
       if (audio) {
         // Clone the audio to allow multiple simultaneous plays
         const soundClone = audio.cloneNode() as HTMLAudioElement;
-        soundClone.volume = audio.volume;
+        soundClone.volume = 0.7;
         soundClone.play().catch(err => {
           console.warn(`Error playing ${type} sound:`, err);
         });
@@ -73,7 +80,7 @@ export function useGameSounds() {
     } catch (error) {
       console.warn('Error playing sound:', error);
     }
-  }, [isSoundEnabled]);
+  }, []);  // No dependencies - always plays
 
   const startBackgroundMusic = useCallback(() => {
     if (!isMusicEnabled || bgMusicRef.current) return;
@@ -101,7 +108,7 @@ export function useGameSounds() {
   }, []);
 
   const toggleMusic = useCallback(() => {
-    setIsMusicEnabled(prev => {
+    setIsMusicEnabled((prev: boolean) => {
       const newValue = !prev;
       if (!newValue && bgMusicRef.current) {
         bgMusicRef.current.pause();
@@ -113,27 +120,38 @@ export function useGameSounds() {
   }, []);
 
   const toggleSound = useCallback(() => {
-    setIsSoundEnabled(prev => !prev);
+    setIsSoundEnabled((prev: boolean) => !prev);
   }, []);
 
   const toggleAllAudio = useCallback(() => {
-    setIsMusicEnabled(prev => {
-      const newValue = !prev;
-      if (!newValue && bgMusicRef.current) {
-        bgMusicRef.current.pause();
-      } else if (newValue && bgMusicRef.current) {
-        bgMusicRef.current.play().catch(err => console.warn('Error resuming music:', err));
-      } else if (newValue && !bgMusicRef.current) {
-        // Start music if it wasn't started yet
-        startBackgroundMusic();
-      }
-      return newValue;
-    });
-    setIsSoundEnabled(prev => !prev);
-  }, [startBackgroundMusic]);
+    const newValue = !isMusicEnabled;
+    
+    console.log('Toggling MUSIC ONLY from', isMusicEnabled, 'to', newValue);
+    
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('musicEnabled', JSON.stringify(newValue));
+    }
+    
+    // Only toggle music, NOT sound effects
+    setIsMusicEnabled(newValue);
+    // Sound effects always stay enabled
+    
+    // Handle background music
+    if (!newValue && bgMusicRef.current) {
+      bgMusicRef.current.pause();
+      bgMusicRef.current.volume = 0;
+    } else if (newValue && bgMusicRef.current) {
+      bgMusicRef.current.volume = 0.12;
+      bgMusicRef.current.play().catch(err => console.warn('Error resuming music:', err));
+    } else if (newValue && !bgMusicRef.current) {
+      // Start music if it wasn't started yet
+      startBackgroundMusic();
+    }
+  }, [isMusicEnabled, startBackgroundMusic]);
 
-  // Combined state for UI (true if both are enabled)
-  const isAudioEnabled = isMusicEnabled && isSoundEnabled;
+  // UI state now only reflects music state
+  const isAudioEnabled = isMusicEnabled;
 
   return { 
     playSound, 

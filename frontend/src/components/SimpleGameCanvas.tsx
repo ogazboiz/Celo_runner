@@ -1048,21 +1048,46 @@ export function SimpleGameCanvas() {
     }
   }, [isPlaying]);
 
+  // Responsive Canvas Dimensions
+  const [canvasDims, setCanvasDims] = useState({ width: 800, height: 600 });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 640;
+      setIsMobile(mobile);
+      setCanvasDims({
+        width: mobile ? 720 : 800,  // Wider on mobile
+        height: mobile ? 960 : 600  // 9:16 ratio
+      });
+    };
+
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <div className="flex justify-center items-center min-h-[250px] sm:min-h-[350px] md:min-h-[450px] relative z-10 w-full">
-      <div className="relative w-full max-w-full">
+    <div className="flex justify-center items-center h-[100vh] sm:h-auto sm:min-h-[350px] md:min-h-[450px] relative z-10 w-full">
+      <div className="relative w-full flex justify-center px-0 sm:px-4">
         <canvas
           ref={canvasRef}
-          width={800}
-          height={600}
-          className="nes-container pixel-art shadow-2xl w-full h-auto"
+          width={canvasDims.width}
+          height={canvasDims.height}
+          className="pixel-art shadow-2xl"
           style={{
             background: 'linear-gradient(to bottom, #87CEEB, #98FB98)',
             imageRendering: 'pixelated',
-            maxWidth: '100%',
-            height: 'auto',
-            aspectRatio: '4/3',
-            display: 'block'
+            width: isMobile ? '100vw' : '100%',
+            maxWidth: isMobile ? '100vw' : '100%',
+            height: isMobile ? '60vh' : 'auto',
+            aspectRatio: isMobile ? undefined : '4/3',
+            display: 'block',
+            objectFit: isMobile ? undefined : 'contain',
+            border: '4px solid #212529',
+            boxShadow: 'inset -4px -4px 0px 0px #000000',
+            padding: 0,
+            margin: 0
           }}
         />
 

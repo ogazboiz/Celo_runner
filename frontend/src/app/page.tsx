@@ -33,7 +33,7 @@ export default function Home() {
   }, [startBackgroundMusic, stopBackgroundMusic]);
 
   return (
-    <div className="min-h-screen text-white flex flex-col items-center justify-center p-2 sm:p-4 relative overflow-hidden">
+    <div className="min-h-screen text-white flex flex-col items-center justify-center p-0 sm:p-4 relative overflow-hidden">
       {/* Contract Manager - handles contract callbacks */}
       <ContractManager />
 
@@ -51,7 +51,7 @@ export default function Home() {
       {/* Pixel Art Background */}
       <PixelBackground />
 
-      <main className="relative w-full max-w-full sm:max-w-3xl md:max-w-4xl mx-auto my-4 sm:my-8">
+      <main className="relative w-full max-w-full sm:max-w-3xl md:max-w-4xl mx-auto my-0 sm:my-8">
         {!isConnected || !player?.isRegistered ? (
           <>
             <NewWalletConnection />

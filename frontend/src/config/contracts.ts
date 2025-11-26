@@ -3,6 +3,7 @@ export const CONTRACTS = {
   QUEST_TOKEN: '0x48e2e16a5cfe127fbfc76f3fd85163bbae64a861' as `0x${string}`,
   RUNNER_BADGE: '0x7b72c0e84012f868fe9a4164a8122593d0f38b84' as `0x${string}`,
   CELO_RUNNER: '0x4588b0ff4016952e4391dea6dcc7f9a1484ac7b6' as `0x${string}`,
+  MARKETPLACE: '0xe585C5fde8c832d7Cf76576E3a3313a3aDe8bd43' as `0x${string}`,
 } as const;
 
 // Helper function to get contract addresses
