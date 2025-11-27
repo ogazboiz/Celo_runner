@@ -764,12 +764,12 @@ export function GameUI() {
             </div>
 
             <div className="flex justify-center">
-              <button
-                onClick={() => { playSound('button'); setShowLeaderboard(false); }}
+            <button
+              onClick={() => { playSound('button'); setShowLeaderboard(false); }}
                 className="nes-btn is-primary pixel-font text-[10px] sm:text-xs px-4 py-1"
-              >
-                CLOSE
-              </button>
+            >
+              CLOSE
+            </button>
             </div>
           </div>
         </div>
@@ -820,12 +820,12 @@ export function GameUI() {
             </div>
 
             <div className="flex justify-center">
-              <button
-                onClick={() => { playSound('button'); setShowShop(false); }}
+            <button
+              onClick={() => { playSound('button'); setShowShop(false); }}
                 className="nes-btn is-primary pixel-font text-[10px] sm:text-xs px-4 py-1"
-              >
-                CLOSE
-              </button>
+            >
+              CLOSE
+            </button>
             </div>
           </div>
         </div>

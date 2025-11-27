@@ -23,12 +23,20 @@ export default function Home() {
   useEffect(() => {
     // Delay to allow user interaction (browsers block autoplay)
     const timer = setTimeout(() => {
-      startBackgroundMusic();
+      try {
+        startBackgroundMusic();
+      } catch (error) {
+        console.error('Error starting background music:', error);
+      }
     }, 1000);
 
     return () => {
       clearTimeout(timer);
-      stopBackgroundMusic();
+      try {
+        stopBackgroundMusic();
+      } catch (error) {
+        console.error('Error stopping background music:', error);
+      }
     };
   }, [startBackgroundMusic, stopBackgroundMusic]);
 
