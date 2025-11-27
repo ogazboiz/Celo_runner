@@ -17,76 +17,35 @@ interface LeaderboardEntry {
   totalGamesPlayed: number;
 }
 
-interface Tournament {
-  id: string;
-  name: string;
-  startTime: string;
-  endTime: string;
-  prizePool: number;
-  participants: number;
-  status: 'upcoming' | 'active' | 'completed';
-}
-
 export function Leaderboard() {
   const showNotification = useGameStore(state => state.showNotification);
+  const loadLeaderboard = useGameStore(state => state.loadLeaderboard);
   const { player, walletAddress } = useGameStore();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'all'>('all');
   const [leaderboardType, setLeaderboardType] = useState<'score' | 'tokens' | 'speed'>('score');
 
   useEffect(() => {
-    // Simulate fetching leaderboard data
-    const mockData: LeaderboardEntry[] = [
-      { rank: 1, player: 'CryptoRunner', walletAddress: '0.0.123456', score: 15420, stage: 5, tokens: 2500, nfts: 8, completionTime: 145, streakDays: 12, totalGamesPlayed: 45 },
-      { rank: 2, player: 'BlockchainGamer', walletAddress: '0.0.123457', score: 14280, stage: 4, tokens: 2200, nfts: 6, completionTime: 178, streakDays: 8, totalGamesPlayed: 38 },
-      { rank: 3, player: 'CeloHero', walletAddress: '0.0.123458', score: 13850, stage: 4, tokens: 2100, nfts: 5, completionTime: 189, streakDays: 15, totalGamesPlayed: 42 },
-      { rank: 4, player: 'CeloMaster', walletAddress: '0.0.123459', score: 12500, stage: 3, tokens: 1800, nfts: 4, completionTime: 205, streakDays: 5, totalGamesPlayed: 32 },
-      { rank: 5, player: 'QuizChampion', walletAddress: '0.0.123460', score: 11800, stage: 3, tokens: 1600, nfts: 3, completionTime: 198, streakDays: 20, totalGamesPlayed: 55 },
-      { rank: 6, player: 'TokenCollector', walletAddress: '0.0.123461', score: 11200, stage: 3, tokens: 1500, nfts: 3, completionTime: 234, streakDays: 3, totalGamesPlayed: 28 },
-      { rank: 7, player: 'NFTHunter', walletAddress: '0.0.123462', score: 10800, stage: 2, tokens: 1400, nfts: 2, completionTime: 289, streakDays: 7, totalGamesPlayed: 25 },
-      { rank: 8, player: 'GameFiGuru', walletAddress: '0.0.123463', score: 10200, stage: 2, tokens: 1300, nfts: 2, completionTime: 312, streakDays: 4, totalGamesPlayed: 30 },
-      { rank: 9, player: 'EduGamer', walletAddress: '0.0.123464', score: 9800, stage: 2, tokens: 1200, nfts: 2, completionTime: 298, streakDays: 11, totalGamesPlayed: 35 },
-      { rank: 10, player: 'LearningLegend', walletAddress: '0.0.123465', score: 9200, stage: 2, tokens: 1100, nfts: 1, completionTime: 356, streakDays: 1, totalGamesPlayed: 18 },
-    ];
-
-    const mockTournaments: Tournament[] = [
-      {
-        id: 'weekly-challenge',
-        name: 'Weekly Blockchain Challenge',
-        startTime: '2024-01-22T00:00:00Z',
-        endTime: '2024-01-28T23:59:59Z',
-        prizePool: 10000,
-        participants: 234,
-        status: 'active'
-      },
-      {
-        id: 'speed-run',
-        name: 'Celo Speed Run',
-        startTime: '2024-01-25T12:00:00Z',
-        endTime: '2024-01-25T18:00:00Z',
-        prizePool: 5000,
-        participants: 89,
-        status: 'upcoming'
-      },
-      {
-        id: 'knowledge-master',
-        name: 'Knowledge Master Tournament',
-        startTime: '2024-01-15T00:00:00Z',
-        endTime: '2024-01-21T23:59:59Z',
-        prizePool: 8000,
-        participants: 156,
-        status: 'completed'
+    // Load real leaderboard data from blockchain
+    const fetchLeaderboard = async () => {
+      setLoading(true);
+      try {
+        const data = await loadLeaderboard();
+        console.log('📊 Loaded leaderboard:', data);
+        setLeaderboard(data);
+      } catch (error) {
+        console.error('Error loading leaderboard:', error);
+        showNotification('error', 'Error', 'Failed to load leaderboard');
+        // Fallback to empty array
+        setLeaderboard([]);
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
 
-    setTimeout(() => {
-      setLeaderboard(mockData);
-      setTournaments(mockTournaments);
-      setLoading(false);
-    }, 1000);
-  }, [timeframe, leaderboardType]);
+    fetchLeaderboard();
+  }, [timeframe, leaderboardType, loadLeaderboard, showNotification]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -153,61 +112,9 @@ export function Leaderboard() {
     return sortedBoard.find(entry => entry.walletAddress === walletAddress);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   return (
     <div className="space-y-6">
       {/* Tournament Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl p-6">
-        <h2 className="text-2xl font-bold mb-4 flex items-center">
-          <Trophy className="w-6 h-6 mr-2" />
-          Active Tournaments
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {tournaments.map((tournament) => (
-            <div key={tournament.id} className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-bold text-sm">{tournament.name}</h3>
-                <span className={`px-2 py-1 rounded text-xs font-bold ${
-                  tournament.status === 'active' ? 'bg-green-500' :
-                  tournament.status === 'upcoming' ? 'bg-yellow-500' :
-                  'bg-gray-500'
-                }`}>
-                  {tournament.status}
-                </span>
-              </div>
-              <div className="space-y-1 text-sm opacity-90">
-                <div className="flex justify-between">
-                  <span>Prize Pool:</span>
-                  <span className="font-bold">{tournament.prizePool.toLocaleString()} QC</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Participants:</span>
-                  <span>{tournament.participants}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Ends:</span>
-                  <span>{formatDate(tournament.endTime)}</span>
-                </div>
-              </div>
-              <button
-                className="w-full mt-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold py-2 px-4 rounded transition-colors"
-                onClick={() => showNotification('info', 'Coming Soon', 'Tournament feature coming soon!')}
-              >
-                {tournament.status === 'upcoming' ? 'Register' : 'View Details'}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Leaderboard Controls */}
       <div className="flex flex-wrap gap-4 justify-between items-center">
         {/* Timeframe Selector */}

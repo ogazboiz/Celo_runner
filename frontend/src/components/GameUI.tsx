@@ -31,6 +31,7 @@ export function GameUI() {
   const [showNFTs, setShowNFTs] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showShop, setShowShop] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(false);
   const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
   const [isMinting, setIsMinting] = useState(false);
@@ -419,6 +420,8 @@ export function GameUI() {
           🎮 SHOP
         </button>
         <button
+          onClick={() => { playSound('button'); setShowMarketplace(true); }}
+          className="nes-btn is-success pixel-font text-xs py-1 px-2 sm:px-3 flex-1 sm:flex-none"
           onClick={() => { playSound('button'); router.push('/marketplace'); }}
           className="nes-btn is-success pixel-font text-xs py-1 px-3"
         >
@@ -660,9 +663,16 @@ export function GameUI() {
             <div className="flex gap-2 justify-center">
               <button
                 onClick={() => { playSound('button'); setShowNFTs(false); setShowLeaderboard(true); }}
+                className="nes-btn is-warning pixel-font flex-1 text-xs sm:text-sm py-1"
+              >
+                🏆 LEADERBOARD
+              </button>
+              <button
+                onClick={() => { playSound('button'); setShowNFTs(false); setShowMarketplace(true); }}
+                className="nes-btn is-success pixel-font flex-1 text-xs sm:text-sm py-1"
                 className="nes-btn is-success pixel-font text-[10px] sm:text-xs px-3 py-1"
               >
-                LEADERBOARD
+                🛒 MARKETPLACE
               </button>
               <button
                 onClick={() => { playSound('button'); setShowNFTs(false); }}
@@ -771,6 +781,61 @@ export function GameUI() {
               CLOSE
             </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Marketplace Modal - Coming Soon */}
+      {showMarketplace && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 pointer-events-auto p-2 sm:p-4">
+          <div className="nes-container pixel-art w-full max-w-[95%] sm:max-w-md md:max-w-lg mx-auto" style={{ backgroundColor: 'white', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="text-center mb-3 sm:mb-4">
+              <p className="pixel-font text-base sm:text-lg md:text-xl text-gray-800 mb-1">🛒 NFT Marketplace</p>
+              <p className="pixel-font text-xs sm:text-sm text-gray-600">Buy & Sell Your Badge NFTs</p>
+            </div>
+
+            <div className="space-y-4 mb-4">
+              {/* Coming Soon Message */}
+              <div className="nes-container is-rounded p-4" style={{ backgroundColor: '#f0f8ff' }}>
+                <div className="text-center">
+                  <div className="text-6xl mb-4">🏗️</div>
+                  <p className="pixel-font text-base mb-2 font-bold">Coming Soon!</p>
+                  <p className="pixel-font text-xs text-gray-600 mb-3">
+                    The NFT Marketplace feature is under development.
+                  </p>
+                </div>
+              </div>
+
+              {/* Features Preview */}
+              <div className="nes-container is-rounded p-4">
+                <p className="pixel-font text-sm font-bold mb-2">📋 Planned Features:</p>
+                <ul className="pixel-font text-xs text-gray-700 space-y-1 list-none">
+                  <li>✅ List your Badge NFTs for sale</li>
+                  <li>✅ Set your own prices in CELO</li>
+                  <li>✅ Browse NFTs from other players</li>
+                  <li>✅ Instant peer-to-peer trading</li>
+                  <li>✅ Secure blockchain transactions</li>
+                </ul>
+              </div>
+
+              {/* What You Can Do Now */}
+              <div className="nes-container is-rounded p-4" style={{ backgroundColor: '#fff8dc' }}>
+                <p className="pixel-font text-sm font-bold mb-2">💡 What You Can Do Now:</p>
+                <ul className="pixel-font text-xs text-gray-700 space-y-1">
+                  <li>🎮 Play stages and earn Badge NFTs</li>
+                  <li>📦 View your NFT collection</li>
+                  <li>🏆 Compete on the leaderboard</li>
+                  <li>🪙 Collect QuestCoins</li>
+                </ul>
+              </div>
+            </div>
+
+            <button
+              onClick={() => { playSound('button'); setShowMarketplace(false); }}
+              className="nes-btn is-primary pixel-font w-full"
+            >
+              CLOSE
+            </button>
           </div>
         </div>
       )}
