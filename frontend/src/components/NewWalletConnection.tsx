@@ -5,6 +5,7 @@ import { client } from '@/client';
 import { celoSepolia, useWallet } from '@/context/WalletContext';
 import { useEffect, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
+import { isMiniPayAvailable, openMiniPayAddCash, checkCUSDBalance } from '@/utils/minipay';
 
 export function NewWalletConnection() {
   const { account, isConnected } = useWallet();
@@ -12,6 +13,8 @@ export function NewWalletConnection() {
   const [username, setUsername] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'pending' | 'waiting' | 'success'>('idle');
+  const [isMiniPay, setIsMiniPay] = useState(false);
+  const [cUSDBalance, setCUSDBalance] = useState<string>("0");
 
   const {
     setConnected,
@@ -19,8 +22,20 @@ export function NewWalletConnection() {
     setPlayer,
     registerPlayer,
     loadPlayerData,
+    contractCallbacks,
     player
   } = useGameStore();
+
+  // Check for MiniPay on mount and load cUSD balance
+  useEffect(() => {
+    setIsMiniPay(isMiniPayAvailable());
+  }, []);
+
+  useEffect(() => {
+    if (isMiniPay && account?.address) {
+      checkCUSDBalance(account.address, true).then(setCUSDBalance);
+    }
+  }, [isMiniPay, account?.address]);
 
   // Handle wallet connection state changes
   useEffect(() => {
@@ -93,15 +108,21 @@ export function NewWalletConnection() {
     if (!username.trim()) return;
 
     // First, check if player is already registered by loading their data
-    if (account?.address) {
+    if (account?.address && contractCallbacks.loadPlayerData) {
       console.log('🔍 Checking if player is already registered...');
-      const existingPlayer = await loadPlayerData(account.address);
-      if (existingPlayer?.isRegistered) {
-        console.log('✅ Player is already registered, skipping registration');
-        setRegistrationStatus('success');
-        setUsername('');
-        setIsRegistering(false);
-        return;
+      try {
+        const existingPlayer = await contractCallbacks.loadPlayerData(account.address);
+        if (existingPlayer && (existingPlayer.isRegistered || (existingPlayer.username && existingPlayer.username.trim().length > 0))) {
+          console.log('✅ Player is already registered, skipping registration');
+          setRegistrationStatus('success');
+          setUsername('');
+          setIsRegistering(false);
+          // Also load the player data into the store
+          await loadPlayerData(account.address);
+          return;
+        }
+      } catch (error) {
+        console.log('Could not check existing registration, proceeding with new registration');
       }
     }
 
@@ -112,21 +133,6 @@ export function NewWalletConnection() {
       console.log('🔄 Starting registration for:', username.trim());
       const result = await registerPlayer(username.trim());
       console.log('📝 Registration result:', result);
-
-      // Check if result is the special "already_registered" value
-      if (result === 'already_registered') {
-        console.log('✅ Player already registered (detected during registration), loading data...');
-        setRegistrationStatus('waiting');
-        setUsername('');
-        setTimeout(async () => {
-          setRegistrationStatus('success');
-          if (account?.address) {
-            await loadPlayerData(account.address);
-          }
-        }, 2000);
-        setIsRegistering(false);
-        return;
-      }
 
       if (result) {
         console.log('✅ Registration successful! Waiting for blockchain confirmation...');
@@ -144,9 +150,9 @@ export function NewWalletConnection() {
       } else {
         setRegistrationStatus('idle');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if error is "Already registered" - treat as success
-      const errorMessage = error?.message || error?.toString() || '';
+      const errorMessage = (error instanceof Error ? error.message : String(error)) || '';
       if (errorMessage.includes('Already registered') || 
           errorMessage.includes('already registered') ||
           errorMessage.includes('Player already registered')) {
@@ -189,14 +195,35 @@ export function NewWalletConnection() {
           </button>
         </div>
       ) : (
-        <ConnectButton
-          client={client}
-          chain={celoSepolia}
-          theme="light"
-          connectButton={{
-            label: "💼 CONNECT WALLET",
-          }}
-        />
+        <div className="flex flex-col items-center gap-2 relative z-20">
+          {isMiniPay && (
+            <div className="nes-container is-success pixel-font text-xs px-3 py-2 mb-2">
+              <div className="mb-1">🎉 MiniPay Detected!</div>
+              <div className="text-[10px]">Enjoy seamless, low-cost transactions!</div>
+              {parseFloat(cUSDBalance) > 0 && (
+                <div className="mt-1 text-[10px] font-bold">
+                  💵 {parseFloat(cUSDBalance).toFixed(2)} cUSD
+                </div>
+              )}
+            </div>
+          )}
+          <ConnectButton
+            client={client}
+            chain={celoSepolia}
+            theme="light"
+            connectButton={{
+              label: "💼 CONNECT WALLET",
+            }}
+          />
+          {isMiniPay && (
+            <button
+              onClick={openMiniPayAddCash}
+              className="nes-btn is-success pixel-font text-xs px-3 py-1"
+            >
+              💰 Add Cash to MiniPay
+            </button>
+          )}
+        </div>
       )}
 
       {/* Registration Modal */}

@@ -26,7 +26,7 @@ export interface Player {
   currentStage: number;
   totalScore: number;
   inGameCoins: number;        // Persistent coins for purchases
-  tokensEarned: number;       // QuestCoin HTS tokens (questTokensEarned from contract)
+  tokensEarned: number;       // QUEST ERC20 tokens (questTokensEarned from contract)
   nftsEarned: number;
   completedStages: number[];
   tokensClaimedStages: number[];  // Stages where QuestCoin tokens have been claimed

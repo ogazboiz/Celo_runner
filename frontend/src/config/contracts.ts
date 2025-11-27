@@ -3,6 +3,8 @@ export const CONTRACTS = {
   QUEST_TOKEN: '0x48e2e16a5cfe127fbfc76f3fd85163bbae64a861' as `0x${string}`,
   RUNNER_BADGE: '0x7b72c0e84012f868fe9a4164a8122593d0f38b84' as `0x${string}`,
   CELO_RUNNER: '0x4588b0ff4016952e4391dea6dcc7f9a1484ac7b6' as `0x${string}`,
+  MARKETPLACE: '0x370f6701cFDECC0A9D744a12b156317AA3CE32D1' as `0x${string}`, // Updated with cUSD support
+  CUSD_TOKEN: '0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b' as `0x${string}`, // Celo Sepolia cUSD
 } as const;
 
 // Helper function to get contract addresses

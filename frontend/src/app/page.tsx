@@ -25,12 +25,20 @@ export default function Home() {
   useEffect(() => {
     // Delay to allow user interaction (browsers block autoplay)
     const timer = setTimeout(() => {
-      startBackgroundMusic();
+      try {
+        startBackgroundMusic();
+      } catch (error) {
+        console.error('Error starting background music:', error);
+      }
     }, 1000);
 
     return () => {
       clearTimeout(timer);
-      stopBackgroundMusic();
+      try {
+        stopBackgroundMusic();
+      } catch (error) {
+        console.error('Error stopping background music:', error);
+      }
     };
   }, [startBackgroundMusic, stopBackgroundMusic]);
 
@@ -49,7 +57,7 @@ export default function Home() {
   }, [showLeaderboard, loadLeaderboard]);
 
   return (
-    <div className="min-h-screen text-white flex flex-col items-center justify-center p-2 sm:p-4 relative overflow-hidden">
+    <div className="min-h-screen text-white flex flex-col items-center justify-center p-0 sm:p-4 relative overflow-hidden">
       {/* Contract Manager - handles contract callbacks */}
       <ContractManager />
 
@@ -77,6 +85,7 @@ export default function Home() {
       <PixelBackground />
 
       <main className="relative w-full max-w-full sm:max-w-3xl md:max-w-5xl mx-auto my-4 sm:my-8">
+      <main className="relative w-full max-w-full sm:max-w-3xl md:max-w-4xl mx-auto my-0 sm:my-8">
         {!isConnected || !player?.isRegistered ? (
           <>
             <NewWalletConnection />

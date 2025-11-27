@@ -2,5 +2,16 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+solc = "0.8.24"
+optimizer = false
+
+# Celo network configuration
+[rpc_endpoints]
+celo-sepolia = "https://forno.celo-sepolia.celo-testnet.org/"
+celo = "https://forno.celo.org"
+
+[etherscan]
+celo = { key = "${ETHERSCAN_API_KEY}", url = "https://api.celoscan.io/api" }
+celo-sepolia = { key = "${ETHERSCAN_API_KEY}", url = "https://celo-sepolia.blockscout.com/api", verifier = "blockscout" }
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

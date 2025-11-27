@@ -88,8 +88,20 @@ export function QuizModal() {
   if (!showQuiz || !currentQuestion) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-lg p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl w-full border-3 sm:border-4 border-black shadow-2xl">
+    <div 
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 sm:p-4"
+      onClick={() => {
+        // Only allow closing if result is not being shown
+        if (!showResult) {
+          playSound('button');
+          setShowQuiz(false);
+        }
+      }}
+    >
+      <div 
+        className="bg-white rounded-lg p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl w-full border-3 sm:border-4 border-black shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex justify-between items-center mb-3 sm:mb-4 md:mb-6">
           <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-black">🧠 Quiz</h2>

@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameStore, LeaderboardEntry } from '@/store/gameStore';
-import { Play, Pause, RotateCcw, Trophy, Coins, Medal, Users } from 'lucide-react';
+import { Play, Pause, RotateCcw, Trophy, Coins, Medal, Users, ShoppingBag, ShoppingCart, Package, Wallet, LogOut } from 'lucide-react';
 import { useActiveAccount } from 'thirdweb/react';
 import { getContractAddresses } from '@/config/contracts';
 import { useGameSounds } from '@/hooks/useGameSounds';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { getBadgeImage, getBadgeNameByStage } from '@/config/badgeMetadata';
+import { useWallet } from '@/context/WalletContext';
+import { isMiniPayAvailable, checkCUSDBalance } from '@/utils/minipay';
 
 export function GameUI() {
   const router = useRouter();
@@ -30,9 +32,12 @@ export function GameUI() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showShop, setShowShop] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
+  const [showWalletMenu, setShowWalletMenu] = useState(false);
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
   const [isMinting, setIsMinting] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [isMiniPay, setIsMiniPay] = useState(false);
+  const [cUSDBalance, setCUSDBalance] = useState<string>("0");
   
   // Confirmation dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -51,6 +56,18 @@ export function GameUI() {
 
   const account = useActiveAccount();
   const address = account?.address;
+  const { disconnect } = useWallet();
+
+  // Check for MiniPay and load cUSD balance
+  useEffect(() => {
+    setIsMiniPay(isMiniPayAvailable());
+  }, []);
+
+  useEffect(() => {
+    if (isMiniPay && address) {
+      checkCUSDBalance(address, true).then(setCUSDBalance);
+    }
+  }, [isMiniPay, address]);
 
 
   const handleRestart = () => {
@@ -131,7 +148,7 @@ export function GameUI() {
     setConfirmDialog({
       isOpen: true,
       title: `Mint ${badgeName}?`,
-      message: `• NFT Badge: ${badgeName}\n• QuestCoin Tokens: ${tokenAmount}\n• Wallet: ${address.slice(0, 6)}...${address.slice(-4)}\n\nThis will mint actual HTS tokens to your wallet address.`,
+      message: `• NFT Badge: ${badgeName}\n• QUEST Tokens: ${tokenAmount}\n• Wallet: ${address.slice(0, 6)}...${address.slice(-4)}\n\nThis will mint QUEST tokens and NFT badge to your wallet address.`,
       onConfirm: () => {
         setConfirmDialog({ ...confirmDialog, isOpen: false });
         proceedWithMinting(mintParams.stage, mintParams.badgeName, mintParams.tokenAmount);
@@ -147,7 +164,7 @@ export function GameUI() {
     if (!address) return;
     
     try {
-      console.log('🔄 User confirmed minting, proceeding with HTS token minting...');
+      console.log('🔄 User confirmed minting, proceeding with QUEST token and NFT minting...');
       setIsMinting(true);
 
       // Get contract addresses
@@ -155,7 +172,7 @@ export function GameUI() {
       console.log('📜 Using contract addresses:', contracts);
 
       try {
-        console.log('🔄 Minting HTS tokens through CeloService...');
+        console.log('🔄 Minting QUEST tokens through Celo contract...');
 
         // Check what has already been claimed from player state
         const tokensAlreadyClaimed = player?.tokensClaimedStages?.includes(stage) || false;
@@ -312,45 +329,107 @@ export function GameUI() {
     }
   }, [showLeaderboard, loadLeaderboard, currentStage]);
 
+  const handleDisconnect = () => {
+    try {
+      disconnect();
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to disconnect:', error);
+      window.location.reload();
+    }
+  };
+
   return (
     <>
-      {/* Top Left - Stage and Score */}
-      <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-20 flex flex-col gap-1 sm:gap-2">
-        <div className="pixel-font text-white">
-          {/* Stage */}
-          <div className="pixel-font text-white text-xs sm:text-base md:text-xl bg-black/50 px-2 py-1 sm:px-3 rounded">
-            🎮 Stage {currentStage}
+      {/* Top Right - Wallet Disconnect Button */}
+      {address && (
+          /* Desktop View (Hidden on Mobile) */
+          <div className="hidden sm:flex absolute top-2 right-2 sm:top-4 sm:right-4 z-30 items-center gap-2">
+            <div className="nes-container is-dark pixel-font text-xs sm:text-sm px-2 py-1">
+              💰 {address.slice(0, 6)}...{address.slice(-4)}
+            </div>
+            <button
+              onClick={handleDisconnect}
+              className="nes-btn is-error pixel-font text-xs px-2 py-1"
+              title="Disconnect Wallet"
+            >
+              EXIT
+            </button>
           </div>
-          
-          {/* Score */}
-          <div className="pixel-font text-white text-xs sm:text-base md:text-xl bg-black/50 px-2 py-1 sm:px-3 rounded mt-1 sm:mt-2">
-            ⭐ {score}
-          </div>
-          
-          {/* Coins - Show saved + session */}
-          <div className="pixel-font text-white text-xs sm:text-base md:text-xl bg-black/50 px-2 py-1 sm:px-3 rounded">
-            🪙 {(player?.inGameCoins || 0)} {sessionCoins > 0 && `+${sessionCoins}`}
-          </div>
-        </div>
-      </div>
+      )}
 
-      {/* Bottom right - Buttons */}
-      <div className="absolute bottom-2 left-2 right-2 sm:bottom-4 sm:left-auto sm:right-4 z-20 flex flex-row sm:flex-col gap-1 sm:gap-2 pointer-events-auto">
+      {/* Mobile Buttons (Visible only on Mobile) - Top Left Horizontal Menu */}
+      <div className="flex sm:hidden fixed top-2 left-2 z-50 flex-row gap-2 pointer-events-auto">
+        {/* Wallet Button & Menu */}
+        {address && (
+          <div className="relative">
+            <button
+              onClick={() => { playSound('button'); setShowWalletMenu(!showWalletMenu); }}
+              className="nes-btn is-primary pixel-font p-1 flex items-center justify-center w-8 h-8"
+              title="Wallet Menu"
+            >
+              <Wallet size={16} />
+            </button>
+            
+            {/* Dropdown Menu - Aligned Left */}
+            {showWalletMenu && (
+              <div className="absolute top-10 left-0 bg-white border-2 border-black p-2 rounded shadow-lg flex flex-col gap-2 min-w-[150px]">
+                <div className="pixel-font text-[10px] text-black text-center border-b border-gray-200 pb-1 mb-1">
+                  {address.slice(0, 6)}...{address.slice(-4)}
+                </div>
+                <button
+                  onClick={handleDisconnect}
+                  className="nes-btn is-error pixel-font text-[10px] py-1 px-2 flex items-center justify-center gap-1 w-full"
+                >
+                  <LogOut size={12} /> DISCONNECT
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         <button
           onClick={() => { playSound('button'); setShowShop(true); }}
-          className="nes-btn is-warning pixel-font text-xs py-1 px-2 sm:px-3 flex-1 sm:flex-none"
+          className="nes-btn is-warning pixel-font p-1 flex items-center justify-center w-8 h-8"
+          title="Shop"
+        >
+          <ShoppingBag size={16} />
+        </button>
+        <button
+          onClick={() => { playSound('button'); router.push('/marketplace'); }}
+          className="nes-btn is-success pixel-font p-1 flex items-center justify-center w-8 h-8"
+          title="Market"
+        >
+          <ShoppingCart size={16} />
+        </button>
+        <button
+          onClick={() => { playSound('button'); setShowNFTs(true); }}
+          className="nes-btn is-primary pixel-font p-1 flex items-center justify-center w-8 h-8"
+          title="NFTs"
+        >
+          <Package size={16} />
+        </button>
+      </div>
+
+      {/* Desktop Buttons (Hidden on Mobile) - Bottom Right */}
+      <div className="hidden sm:flex absolute bottom-4 right-4 z-20 flex-col gap-2 pointer-events-auto">
+        <button
+          onClick={() => { playSound('button'); setShowShop(true); }}
+          className="nes-btn is-warning pixel-font text-xs py-1 px-3"
         >
           🎮 SHOP
         </button>
         <button
           onClick={() => { playSound('button'); setShowMarketplace(true); }}
           className="nes-btn is-success pixel-font text-xs py-1 px-2 sm:px-3 flex-1 sm:flex-none"
+          onClick={() => { playSound('button'); router.push('/marketplace'); }}
+          className="nes-btn is-success pixel-font text-xs py-1 px-3"
         >
           🛒 MARKET
         </button>
         <button
           onClick={() => { playSound('button'); setShowNFTs(true); }}
-          className="nes-btn is-primary pixel-font text-xs py-1 px-2 sm:px-3 flex-1 sm:flex-none"
+          className="nes-btn is-primary pixel-font text-xs py-1 px-3"
         >
           📦 NFTs
         </button>
@@ -372,8 +451,15 @@ export function GameUI() {
 
       {/* Collection Modal - Simple */}
       {showNFTs && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 pointer-events-auto p-2 sm:p-4">
-          <div className="nes-container pixel-art max-w-[95%] sm:max-w-md w-full" style={{ backgroundColor: 'white', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div 
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 pointer-events-auto p-2 sm:p-4"
+          onClick={() => { playSound('button'); setShowNFTs(false); }}
+        >
+          <div 
+            className="nes-container pixel-art max-w-[95%] sm:max-w-md w-full" 
+            style={{ backgroundColor: 'white', maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="text-center mb-3 sm:mb-4">
               <p className="pixel-font text-base sm:text-lg md:text-xl text-gray-800 mb-2">Collection</p>
               <p className="pixel-font text-sm sm:text-base">🪙 {player?.inGameCoins || 0} Game Coins</p>
@@ -574,7 +660,7 @@ export function GameUI() {
               })()}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 justify-center">
               <button
                 onClick={() => { playSound('button'); setShowNFTs(false); setShowLeaderboard(true); }}
                 className="nes-btn is-warning pixel-font flex-1 text-xs sm:text-sm py-1"
@@ -584,12 +670,13 @@ export function GameUI() {
               <button
                 onClick={() => { playSound('button'); setShowNFTs(false); setShowMarketplace(true); }}
                 className="nes-btn is-success pixel-font flex-1 text-xs sm:text-sm py-1"
+                className="nes-btn is-success pixel-font text-[10px] sm:text-xs px-3 py-1"
               >
                 🛒 MARKETPLACE
               </button>
               <button
                 onClick={() => { playSound('button'); setShowNFTs(false); }}
-                className="nes-btn pixel-font flex-1 text-xs sm:text-sm py-1"
+                className="nes-btn pixel-font text-[10px] sm:text-xs px-3 py-1"
               >
                 CLOSE
               </button>
@@ -600,11 +687,17 @@ export function GameUI() {
 
       {/* Leaderboard Modal - Enhanced */}
       {showLeaderboard && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 pointer-events-auto p-2 sm:p-4">
-          <div className="nes-container pixel-art w-full max-w-[95%] sm:max-w-xl md:max-w-2xl mx-auto" style={{ backgroundColor: 'white', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="text-center mb-3 sm:mb-4">
-              <p className="pixel-font text-base sm:text-xl md:text-2xl text-gray-800 mb-1">🏆 Leaderboard</p>
-              <p className="pixel-font text-xs sm:text-sm text-gray-600">Top Players - All Stages</p>
+        <div 
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 pointer-events-auto p-2 sm:p-4"
+          onClick={() => { playSound('button'); setShowLeaderboard(false); }}
+        >
+          <div 
+            className="nes-container pixel-art w-full max-w-[95%] sm:max-w-xl md:max-w-2xl mx-auto" 
+            style={{ backgroundColor: 'white', maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center mb-4">
+              <p className="pixel-font text-lg sm:text-xl md:text-2xl text-gray-800">🏆 Leaderboard</p>
             </div>
 
             <div className="space-y-2 mb-4">
@@ -680,12 +773,14 @@ export function GameUI() {
               )}
             </div>
 
+            <div className="flex justify-center">
             <button
               onClick={() => { playSound('button'); setShowLeaderboard(false); }}
-              className="nes-btn is-primary pixel-font w-full"
+                className="nes-btn is-primary pixel-font text-[10px] sm:text-xs px-4 py-1"
             >
               CLOSE
             </button>
+            </div>
           </div>
         </div>
       )}
@@ -747,18 +842,25 @@ export function GameUI() {
 
       {/* In-Game Shop Modal - Coming Soon */}
       {showShop && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 pointer-events-auto p-2 sm:p-4">
-          <div className="nes-container pixel-art w-full max-w-[95%] sm:max-w-md md:max-w-lg mx-auto" style={{ backgroundColor: 'white', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="text-center mb-3 sm:mb-4">
-              <p className="pixel-font text-base sm:text-lg md:text-xl text-gray-800 mb-1">🎮 Shop</p>
-              <p className="pixel-font text-sm sm:text-base text-green-600">🪙 {player?.inGameCoins || 0} Coins</p>
+        <div 
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 pointer-events-auto p-2 sm:p-4"
+          onClick={() => { playSound('button'); setShowShop(false); }}
+        >
+          <div 
+            className="nes-container pixel-art w-full max-w-[95%] sm:max-w-md md:max-w-lg mx-auto" 
+            style={{ backgroundColor: 'white', maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center mb-4">
+              <p className="pixel-font text-lg sm:text-xl md:text-2xl text-gray-800">🎮 Shop</p>
+              <p className="pixel-font text-sm sm:text-base text-green-600 mt-2">🪙 {player?.inGameCoins || 0} Coins</p>
             </div>
 
-            <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
+            <div className="mb-4">
               {/* Coming Soon Message */}
-              <div className="text-center py-6 sm:py-12">
-                <div className="text-5xl sm:text-6xl md:text-7xl mb-4 sm:mb-6">🚧</div>
-                <div className="pixel-font text-lg sm:text-xl md:text-2xl text-gray-800 mb-3 sm:mb-4 font-bold">COMING SOON</div>
+              <div className="text-center py-8">
+                <div className="text-6xl mb-4">🚧</div>
+                <div className="pixel-font text-xl text-gray-800 mb-3 font-bold">COMING SOON</div>
                 <div className="pixel-font text-xs sm:text-sm md:text-base text-gray-600 mb-4 sm:mb-6 px-4">
                   Spend your in-game coins on power-ups and cosmetics!
                 </div>
@@ -782,12 +884,14 @@ export function GameUI() {
               </div>
             </div>
 
+            <div className="flex justify-center">
             <button
               onClick={() => { playSound('button'); setShowShop(false); }}
-              className="nes-btn is-primary pixel-font w-full text-xs sm:text-sm py-1"
+                className="nes-btn is-primary pixel-font text-[10px] sm:text-xs px-4 py-1"
             >
               CLOSE
             </button>
+            </div>
           </div>
         </div>
       )}
