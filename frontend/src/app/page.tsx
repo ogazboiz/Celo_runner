@@ -84,7 +84,6 @@ export default function Home() {
       {/* Pixel Art Background */}
       <PixelBackground />
 
-      <main className="relative w-full max-w-full sm:max-w-3xl md:max-w-5xl mx-auto my-4 sm:my-8">
       <main className="relative w-full max-w-full sm:max-w-3xl md:max-w-4xl mx-auto my-0 sm:my-8">
         {!isConnected || !player?.isRegistered ? (
           <>
@@ -131,16 +130,16 @@ export default function Home() {
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-lg border-2 border-green-200">
                   <p className="text-xs font-bold text-gray-700 pixel-font mb-1">TOKENS</p>
-                  <p className="text-2xl sm:text-3xl font-bold pixel-font" style={{ color: '#92cc41' }}>{player?.totalTokens || 0}</p>
+                  <p className="text-2xl sm:text-3xl font-bold pixel-font" style={{ color: '#92cc41' }}>{player?.tokensEarned || 0}</p>
                 </div>
                 <div className="text-center p-3 bg-yellow-50 rounded-lg border-2 border-yellow-200">
-                  <p className="text-xs font-bold text-gray-700 pixel-font mb-1">HIGHEST STAGE</p>
-                  <p className="text-2xl sm:text-3xl font-bold pixel-font" style={{ color: '#f7d51d' }}>{player?.highestStage || 0}</p>
+                  <p className="text-xs font-bold text-gray-700 pixel-font mb-1">CURRENT STAGE</p>
+                  <p className="text-2xl sm:text-3xl font-bold pixel-font" style={{ color: '#f7d51d' }}>{player?.currentStage || 1}</p>
                 </div>
                 <div className="text-center p-3 bg-red-50 rounded-lg border-2 border-red-200">
                   <p className="text-xs font-bold text-gray-700 pixel-font mb-1">NFTs EARNED</p>
                   <p className="text-2xl sm:text-3xl font-bold pixel-font" style={{ color: '#e76e55' }}>
-                    {(player?.stage1Completed ? 1 : 0) + (player?.stage2Completed ? 1 : 0) + (player?.stage3Completed ? 1 : 0)}
+                    {(player?.completedStages?.includes(1) ? 1 : 0) + (player?.completedStages?.includes(2) ? 1 : 0) + (player?.completedStages?.includes(3) ? 1 : 0)}
                   </p>
                 </div>
               </div>

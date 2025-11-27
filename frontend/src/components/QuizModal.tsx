@@ -37,18 +37,41 @@ export function QuizModal() {
   useEffect(() => {
     if (!showQuiz || !currentQuestion) return;
 
+    let timerId: NodeJS.Timeout;
+    
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          handleSubmit();
+          clearInterval(timer);
+          // Check selectedAnswer using the state getter pattern
+          setSelectedAnswer((currentAnswer) => {
+            if (currentAnswer === null) {
+              // Timer reached 0 with no answer - trigger game over
+              setShowResult(true);
+              setIsCorrect(false);
+              playSound('answerWrong');
+              setTimeout(() => {
+                setGameOver('question', score, sessionCoins);
+                setShowQuiz(false);
+              }, 2000);
+            } else {
+              // Answer was selected - submit it with the current answer
+              handleSubmit(currentAnswer);
+            }
+            return currentAnswer;
+          });
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [showQuiz, currentQuestion]);
+    timerId = timer;
+
+    return () => {
+      if (timerId) clearInterval(timerId);
+    };
+  }, [showQuiz, currentQuestion, score, sessionCoins]);
 
   const handleAnswerSelect = (answerIndex: number) => {
     if (showResult) return;
@@ -56,10 +79,18 @@ export function QuizModal() {
     setSelectedAnswer(answerIndex);
   };
 
-  const handleSubmit = () => {
-    if (!currentQuestion || selectedAnswer === null) return;
+  const handleSubmit = (answerToSubmit?: number | null) => {
+    const answer = answerToSubmit !== undefined ? answerToSubmit : selectedAnswer;
+    
+    if (!currentQuestion) {
+      // If no answer selected and timer expired, trigger game over
+      setGameOver('question', score, sessionCoins);
+      setShowQuiz(false);
+      return;
+    }
+    if (answer === null) return;
 
-    const correct = selectedAnswer === currentQuestion.correctAnswer;
+    const correct = answer === currentQuestion.correctAnswer;
     setIsCorrect(correct);
     setShowResult(true);
 
@@ -67,7 +98,7 @@ export function QuizModal() {
     if (correct) {
       playSound('answerCorrect');
       updateScore(currentQuestion.points);
-      setQuizAnswer(currentQuestion.id, selectedAnswer);
+      setQuizAnswer(currentQuestion.id, answer);
     } else {
       playSound('answerWrong');
     }

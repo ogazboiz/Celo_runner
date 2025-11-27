@@ -341,6 +341,15 @@ export function GameUI() {
 
   return (
     <>
+      {/* Stage Indicator - Top Center (Visible during gameplay) */}
+      {isPlaying && (
+        <div className="absolute top-2 sm:top-4 left-1/2 transform -translate-x-1/2 z-40 pointer-events-none">
+          <div className="nes-container is-dark pixel-font text-xs sm:text-sm px-3 sm:px-4 py-1 sm:py-2">
+            <span className="text-yellow-300">🎯 STAGE {currentStage}</span>
+          </div>
+        </div>
+      )}
+
       {/* Top Right - Wallet Disconnect Button */}
       {address && (
           /* Desktop View (Hidden on Mobile) */
